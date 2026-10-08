@@ -301,11 +301,6 @@ async function initFirebase() {
       loadData();
     });
     
-    messaging.onTokenRefresh(async function() {
-      var newToken = await messaging.getToken({ vapidKey: config.vapidKey });
-      fcmToken = newToken;
-      await apiPost({ action: "registerToken", token: newToken, role: MODE });
-    });
     
     console.log("✅ Firebase Push инициализирован");
   } catch (err) {
