@@ -240,8 +240,32 @@ async function initFirebase() {
     }
     var messaging = firebase.messaging();
     
+    // Регистрируем SW
     var registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    console.log("SW зарегистрирован:", registration);
+    console.log("SW зарегистрирован");
+    
+    // ЖДЁМ АКТИВАЦИИ — ключевое исправление
+    if (!registration.active) {
+      console.log("Ждём активации SW...");
+      await new Promise(function(resolve) {
+        var worker = registration.installing || registration.waiting;
+        if (!worker) {
+          // уже активирован
+          resolve();
+          return;
+        }
+        worker.addEventListener("statechange", function() {
+          console.log("SW state:", worker.state);
+          if (worker.state === "activated") resolve();
+        });
+        // Если уже activated на момент подписки
+        if (worker.state === "activated") resolve();
+      });
+      console.log("SW активирован");
+    }
+    
+    // Небольшая пауза, чтобы Firebase точно увидел активный SW
+    await new Promise(function(r) { setTimeout(r, 500); });
     
     var permission = await Notification.requestPermission();
     if (permission !== "granted") {
@@ -254,7 +278,10 @@ async function initFirebase() {
       serviceWorkerRegistration: registration
     });
     
-    if (!token) { console.log("Не удалось получить FCM-токен"); return; }
+    if (!token) {
+      console.log("Не удалось получить FCM-токен");
+      return;
+    }
     
     fcmToken = token;
     console.log("FCM Token получен");
