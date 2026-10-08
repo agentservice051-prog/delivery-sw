@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="manifest" href="manifest.json">
+  <title>Доставка комплектующих</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    :root {
+      --green: #00c853;
+      --red: #ff1744;
+      --bg: #0f0f23;
+      --card: #1a1a2e;
+      --text: #eaeaea;
+      --muted: #6c6c8a;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    
+    #startScreen {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 1000; padding: 20px; text-align: center;
+    }
+    #startScreen h1 { font-size: 22px; margin-bottom: 12px; font-weight: 600; }
+    #startScreen p { color: var(--muted); margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
+    
+    #startBtn {
+      background: var(--green); color: #000; border: none;
+      padding: 16px 48px; border-radius: 12px; font-size: 18px;
+      font-weight: 700; cursor: pointer; transition: transform 0.15s;
+    }
+    #startBtn:active { transform: scale(0.96); }
+    
+    header {
+      background: var(--card); padding: 14px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #2a2a45; position: sticky; top: 0; z-index: 100;
+    }
+    header h1 { font-size: 16px; font-weight: 600; }
+    
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--green); display: inline-block; margin-right: 8px;
+      animation: pulse 2s infinite;
+    }
+    .status-dot.disconnected { background: var(--red); animation: none; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    
+    .role-badge {
+      font-size: 11px; background: #2a2a45; padding: 4px 10px;
+      border-radius: 20px; color: var(--muted);
+    }
+    
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px; padding: 16px; flex: 1; align-content: start;
+    }
+    
+    .section-block {
+      background: var(--green); border-radius: 16px; padding: 20px 12px;
+      text-align: center; cursor: pointer; transition: all 0.2s ease;
+      user-select: none; min-height: 100px; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      box-shadow: 0 4px 15px rgba(0, 200, 83, 0.25);
+    }
+    .section-block:active { transform: scale(0.97); }
+    .section-block.red {
+      background: var(--red);
+      box-shadow: 0 4px 20px rgba(255, 23, 68, 0.4);
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
+    
+    .section-block .name { font-size: 15px; font-weight: 700; color: #000; line-height: 1.3; }
+    .section-block.red .name { color: #fff; }
+    .section-block .hint { font-size: 11px; margin-top: 6px; color: rgba(0,0,0,0.5); }
+    .section-block.red .hint { color: rgba(255,255,255,0.7); }
+    
+    footer {
+      padding: 10px 16px; text-align: center; font-size: 11px;
+      color: var(--muted); border-top: 1px solid #2a2a45;
+    }
+    
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--card); color: var(--text); padding: 12px 24px;
+      border-radius: 12px; font-size: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s ease; z-index: 200; border: 1px solid #2a2a45;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    
+    @media (max-width: 400px) {
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
+      .section-block { min-height: 85px; padding: 14px 8px; }
+      .section-block .name { font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>🚚 Доставка комплектующих</h1>
+  <p>Нажмите кнопку ниже, чтобы начать работу.<br>Разрешите уведомления для получения оповещений.</p>
+  <button id="startBtn">НАЧАТЬ РАБОТУ</button>
+</div>
+
+<header>
+  <div style="display:flex;align-items:center;">
+    <span class="status-dot" id="connDot"></span>
+    <h1 id="headerTitle">Загрузка...</h1>
+  </div>
+  <span class="role-badge" id="roleBadge">—</span>
+</header>
+
+<div class="grid" id="grid">
+  <div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;">Загрузка данных...</div>
+</div>
+
+<footer id="footer">Последнее обновление: —</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// КОНФИГУРАЦИЯ — ЗАМЕНИТЕ ТОЛЬКО API_URL
+// ============================================================
+var API_URL = "https://script.google.com/macros/s/AKfycbzwFuqz57iWOdqOeyt7OgV5ncxD6Pq_NmZo5z1s0n0cIF-obPYWnxMAqyw4KDSvad7NLw/exec";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyDv6ChAH1RaZ9Vs5P0fz2xPXgbHXp5MFk",
+  authDomain: "delivery-system-11b58.firebaseapp.com",
+  projectId: "delivery-system-11b58",
+  storageBucket: "delivery-system-11b58.firebasestorage.app",
+  messagingSenderId: "561159654594",
+  appId: "1:561159654594:web:1a3a7e4c6877e91deb7f5b"
+};
+
+var MODE = new URLSearchParams(window.location.search).get("mode") || "station";
+var POLL_INTERVAL = 2000;
+var previousStates = {};
+var isInitialLoad = true;
+var pollTimer = null;
+var consecutiveErrors = 0;
+var audioContext = null;
+var currentMelody = 1;
+var fcmToken = null;
+
+// ============================================================
+// АУДИО
+// ============================================================
+
+function initAudio() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = audioContext.createOscillator();
+    var gain = audioContext.createGain();
+    gain.gain.value = 0.001;
+    osc.connect(gain); gain.connect(audioContext.destination);
+    osc.start(0); osc.stop(0.01);
+    console.log("Аудио инициализировано");
+  } catch (e) { console.log("Аудио недоступно:", e); }
+}
+
+function playMelody(num) {
+  if (!audioContext) return;
+  var now = audioContext.currentTime;
+  var patterns = {
+    1: [{f:1000,d:0.2},{f:1000,d:0.2},{f:1400,d:0.2}],
+    2: [{f:1200,d:0.15},{f:1600,d:0.15}],
+    3: [{f:600,d:0.5}],
+    4: [{f:800,d:0.1},{f:1000,d:0.1},{f:800,d:0.1},{f:1000,d:0.1}],
+    5: [{f:880,d:0.3},{f:1760,d:0.3}]
+  };
+  var pattern = patterns[num] || patterns[1];
+  var t = now;
+  pattern.forEach(function(note) {
+    var osc = audioContext.createOscillator();
+    var gain = audioContext.createGain();
+    osc.type = "sine";
+    osc.frequency.value = note.f;
+    gain.gain.setValueAtTime(0.3, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + note.d);
+    osc.connect(gain); gain.connect(audioContext.destination);
+    osc.start(t); osc.stop(t + note.d);
+    t += note.d + 0.05;
+  });
+}
+
+// ============================================================
+// API
+// ============================================================
+
+async function apiGet(action) {
+  var res = await fetch(API_URL + "?action=" + action);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+async function apiPost(payload) {
+  var res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+// ============================================================
+// FIREBASE PUSH
+// ============================================================
+
+async function initFirebase() {
+  try {
+    var config = await apiGet("clientConfig");
+    if (!config || !config.vapidKey) {
+      console.log("VAPID не настроен");
+      return;
+    }
+    
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    var messaging = firebase.messaging();
+    
+    var registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
+    console.log("SW зарегистрирован:", registration);
+    
+    var permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      console.log("Уведомления не разрешены");
+      return;
+    }
+    
+    var token = await messaging.getToken({
+      vapidKey: config.vapidKey,
+      serviceWorkerRegistration: registration
+    });
+    
+    if (!token) { console.log("Не удалось получить FCM-токен"); return; }
+    
+    fcmToken = token;
+    console.log("FCM Token получен");
+    
+    var regResult = await apiPost({
+      action: "registerToken",
+      token: token,
+      role: MODE
+    });
+    console.log("Регистрация токена:", regResult);
+    
+    messaging.onMessage(function(payload) {
+      console.log("Push в foreground:", payload);
+      var melody = payload.data && payload.data.melody ? parseInt(payload.data.melody) : 1;
+      playMelody(melody);
+      showToast("🔔 " + (payload.data && payload.data.section ? payload.data.section : "Новая доставка!"));
+      loadData();
+    });
+    
+    messaging.onTokenRefresh(async function() {
+      var newToken = await messaging.getToken({ vapidKey: config.vapidKey });
+      fcmToken = newToken;
+      await apiPost({ action: "registerToken", token: newToken, role: MODE });
+    });
+    
+    console.log("✅ Firebase Push инициализирован");
+  } catch (err) {
+    console.error("Firebase init error:", err);
+  }
+}
+
+// ============================================================
+// ЗАГРУЗКА ДАННЫХ
+// ============================================================
+
+async function loadData() {
+  try {
+    var data = await apiGet("allData");
+    onDataLoaded(data);
+  } catch (err) {
+    onDataError(err);
+  }
+}
+
+function onDataLoaded(data) {
+  consecutiveErrors = 0;
+  updateConnectionStatus(true);
+  
+  if (!data || !data.sections) return;
+  
+  if (data.settings && data.settings.pollInterval) {
+    var newInterval = data.settings.pollInterval;
+    if (newInterval !== POLL_INTERVAL) {
+      POLL_INTERVAL = newInterval;
+      restartPolling();
+    }
+  }
+  
+  if (data.settings) {
+    if (data.settings.systemName) document.getElementById("headerTitle").textContent = data.settings.systemName;
+    if (data.settings.melody) currentMelody = data.settings.melody;
+  }
+  
+  renderSections(data.sections, data.settings);
+  
+  var now = new Date();
+  document.getElementById("footer").textContent = 
+    "Обновлено: " + String(now.getHours()).padStart(2,"0") + ":" +
+    String(now.getMinutes()).padStart(2,"0") + ":" +
+    String(now.getSeconds()).padStart(2,"0");
+}
+
+function onDataError(error) {
+  consecutiveErrors++;
+  updateConnectionStatus(false);
+  console.error("Ошибка:", error);
+  if (consecutiveErrors > 5) showToast("Нет связи с сервером");
+}
+
+function updateConnectionStatus(connected) {
+  document.getElementById("connDot").classList.toggle("disconnected", !connected);
+}
+
+// ============================================================
+// ОТРИСОВКА
+// ============================================================
+
+function renderSections(sections, settings) {
+  var grid = document.getElementById("grid");
+  document.getElementById("roleBadge").textContent = MODE === "station" ? "УЧАСТОК" : "ВОДИТЕЛЬ";
+  
+  if (!sections || sections.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);grid-column:1/-1;">Нет участков</div>';
+    return;
+  }
+  
+  var html = "";
+  var hasNewAlert = false;
+  
+  sections.forEach(function(sec) {
+    var isRed = sec.status === true;
+    var wasRed = previousStates[sec.id] === true;
+    
+    if (MODE === "driver" && isRed && !wasRed && !isInitialLoad) hasNewAlert = true;
+    previousStates[sec.id] = isRed;
+    
+    var hint = MODE === "station"
+      ? (isRed ? "Нажмите если доставлено" : "Нажмите если нужна доставка")
+      : (isRed ? "Нажмите для подтверждения" : "");
+    
+    html += '<div class="section-block' + (isRed ? ' red' : '') + '" ' +
+            'onclick="onBlockClick(\'' + sec.id + '\', ' + isRed + ')" data-id="' + sec.id + '">' +
+            '<div class="name">' + escapeHtml(sec.name) + '</div>' +
+            (hint ? '<div class="hint">' + hint + '</div>' : '') + '</div>';
+  });
+  
+  grid.innerHTML = html;
+  
+  if (hasNewAlert && settings && settings.soundEnabled !== false) {
+    playMelody(currentMelody);
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+    showToast("🔔 Новый запрос на доставку!");
+  }
+  
+  isInitialLoad = false;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ============================================================
+// КЛИК
+// ============================================================
+
+async function onBlockClick(sectionId, isRed) {
+  if (MODE === "station" && isRed) { showToast("Уже ожидает доставку"); return; }
+  if (MODE === "driver" && !isRed) return;
+  
+  var newStatus = (MODE === "station") ? true : false;
+  var block = document.querySelector('[data-id="' + sectionId + '"]');
+  if (block) { block.style.opacity = "0.6"; block.style.pointerEvents = "none"; }
+  
+  try {
+    var result = await apiPost({
+      action: "updateStatus",
+      sectionId: sectionId,
+      newStatus: newStatus,
+      userRole: MODE
+    });
+    
+    if (result && result.success) {
+      showToast(MODE === "station" ? "✅ Запрос отправлен" : "✅ Доставка подтверждена");
+      loadData();
+    } else {
+      showToast("Ошибка: " + (result.error || "неизвестная"));
+      if (block) { block.style.opacity = "1"; block.style.pointerEvents = "auto"; }
+    }
+  } catch (err) {
+    showToast("Ошибка соединения");
+    if (block) { block.style.opacity = "1"; block.style.pointerEvents = "auto"; }
+  }
+}
+
+// ============================================================
+// POLLING
+// ============================================================
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(loadData, POLL_INTERVAL);
+  loadData();
+}
+
+function restartPolling() { startPolling(); }
+
+function showToast(message) {
+  var toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  if (toast._timer) clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() { toast.classList.remove("show"); }, 2500);
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ
+// ============================================================
+
+document.getElementById("startBtn").addEventListener("click", function() {
+  initAudio();
+  document.getElementById("startScreen").style.display = "none";
+  startPolling();
+  initFirebase();
+});
+
+document.addEventListener("visibilitychange", function() {
+  if (!document.hidden) loadData();
+});
+</script>
+</body>
+</html>
