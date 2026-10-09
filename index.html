@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#1a1a2e">
-  <link rel="manifest" href="manifest.json">
+  <script>
+  var mode = new URLSearchParams(window.location.search).get("mode") || "station";
+  var manifest = (mode === "driver") ? "manifest-driver.json" : "manifest.json";
+  document.write('<link rel="manifest" href="' + manifest + '">');
+</script>
   <title>Доставка комплектующих</title>
   
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
