@@ -329,6 +329,7 @@ function initAudio() {
 }
 
 var audioPlayer = new Audio();
+audioPlayer.crossOrigin = "anonymous";
 
 function playMelody(settings) {
   settings = settings || currentSettings;
@@ -336,14 +337,31 @@ function playMelody(settings) {
   // Приоритет: своя мелодия по URL
   if (settings.melodyUrl && settings.melodyUrl.indexOf("http") === 0) {
     try {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
       audioPlayer.src = settings.melodyUrl;
       audioPlayer.volume = 1.0;
-      audioPlayer.play().catch(function(e) { console.log("URL мелодия:", e); });
+      audioPlayer.load();
+      
+      var playPromise = audioPlayer.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(function(e) {
+          console.log("URL мелодия не проиграла:", e);
+          // Fallback на встроенную
+          playBuiltinMelody(settings.melody);
+        });
+      }
       return;
-    } catch (e) { console.log("Ошибка URL мелодии:", e); }
+    } catch (e) {
+      console.log("Ошибка URL мелодии:", e);
+    }
   }
   
   // Встроенные мелодии
+  playBuiltinMelody(settings.melody);
+}
+
+function playBuiltinMelody(num) {
   if (!audioContext) return;
   var now = audioContext.currentTime;
   var patterns = {
@@ -353,7 +371,7 @@ function playMelody(settings) {
     4: [{f:800,d:0.1},{f:1000,d:0.1},{f:800,d:0.1},{f:1000,d:0.1}],
     5: [{f:880,d:0.3},{f:1760,d:0.3}]
   };
-  var pattern = patterns[settings.melody] || patterns[1];
+  var pattern = patterns[num] || patterns[1];
   var t = now;
   pattern.forEach(function(note) {
     var osc = audioContext.createOscillator();
