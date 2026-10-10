@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1a2e">
-  <script>
-  var mode = new URLSearchParams(window.location.search).get("mode") || "station";
-  var manifest = (mode === "driver") ? "manifest-driver.json" : "manifest.json";
-  document.write('<link rel="manifest" href="' + manifest + '">');
-</script>
+  <meta name="theme-color" content="#0f0f23">
   <title>Доставка комплектующих</title>
+  
+  <script>
+    var mode = new URLSearchParams(window.location.search).get("mode") || "station";
+    var manifest = (mode === "driver") ? "manifest-driver.json" : "manifest.json";
+    document.write('<link rel="manifest" href="' + manifest + '">');
+  </script>
   
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-messaging-compat.js"></script>
@@ -18,16 +19,19 @@
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     
     :root {
-      --green: #00c853;
-      --red: #ff1744;
       --bg: #0f0f23;
-      --card: #1a1a2e;
-      --text: #eaeaea;
+      --card-bg: #2a3a5c;
+      --btn: #00c853;
+      --btn-active: #ff1744;
+      --text: #ffffff;
       --muted: #6c6c8a;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-title: 16px;
+      --font-btn: 13px;
     }
     
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -45,25 +49,25 @@
     #startScreen p { color: var(--muted); margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
     
     #startBtn {
-      background: var(--green); color: #000; border: none;
+      background: var(--btn); color: #000; border: none;
       padding: 16px 48px; border-radius: 12px; font-size: 18px;
-      font-weight: 700; cursor: pointer; transition: transform 0.15s;
+      font-weight: 700; cursor: pointer;
     }
     #startBtn:active { transform: scale(0.96); }
     
     header {
-      background: var(--card); padding: 14px 16px;
+      background: #1a1a2e; padding: 12px 16px;
       display: flex; align-items: center; justify-content: space-between;
       border-bottom: 1px solid #2a2a45; position: sticky; top: 0; z-index: 100;
     }
-    header h1 { font-size: 16px; font-weight: 600; }
+    header h1 { font-size: 15px; font-weight: 600; }
     
     .status-dot {
       width: 10px; height: 10px; border-radius: 50%;
-      background: var(--green); display: inline-block; margin-right: 8px;
+      background: var(--btn); display: inline-block; margin-right: 8px;
       animation: pulse 2s infinite;
     }
-    .status-dot.disconnected { background: var(--red); animation: none; }
+    .status-dot.disconnected { background: var(--btn-active); animation: none; }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
     
     .role-badge {
@@ -71,50 +75,153 @@
       border-radius: 20px; color: var(--muted);
     }
     
+    .header-buttons { display: flex; gap: 6px; }
+    .header-btn {
+      background: #2a2a45; color: var(--text); border: none;
+      padding: 6px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
+      font-family: inherit;
+    }
+    .header-btn:active { opacity: 0.7; }
+    
     .grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 12px; padding: 16px; flex: 1; align-content: start;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 14px;
+      flex: 1;
+      align-content: start;
     }
     
-    .section-block {
-      background: var(--green); border-radius: 16px; padding: 20px 12px;
-      text-align: center; cursor: pointer; transition: all 0.2s ease;
-      user-select: none; min-height: 100px; display: flex;
-      flex-direction: column; align-items: center; justify-content: center;
-      box-shadow: 0 4px 15px rgba(0, 200, 83, 0.25);
+    .section-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: min-height 0.2s ease;
     }
-    .section-block:active { transform: scale(0.97); }
-    .section-block.red {
-      background: var(--red);
-      box-shadow: 0 4px 20px rgba(255, 23, 68, 0.4);
-      animation: blink 1.5s infinite;
-    }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
     
-    .section-block .name { font-size: 15px; font-weight: 700; color: #000; line-height: 1.3; }
-    .section-block.red .name { color: #fff; }
-    .section-block .hint { font-size: 11px; margin-top: 6px; color: rgba(0,0,0,0.5); }
-    .section-block.red .hint { color: rgba(255,255,255,0.7); }
+    .section-card .title {
+      font-size: var(--font-title);
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .section-card .parts {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    
+    .part-btn {
+      background: var(--btn);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 8px;
+      font-size: var(--font-btn);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s ease;
+      word-break: break-all;
+      line-height: 1.2;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .part-btn:active { transform: scale(0.96); }
+    
+    .part-btn.red {
+      background: var(--btn-active);
+      color: #fff;
+      animation: blink 1.2s infinite;
+    }
+    
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    
+    .section-card.empty .parts::after {
+      content: "Нет парт-номеров";
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      padding: 6px;
+    }
     
     footer {
-      padding: 10px 16px; text-align: center; font-size: 11px;
+      padding: 8px 16px; text-align: center; font-size: 11px;
       color: var(--muted); border-top: 1px solid #2a2a45;
     }
     
     .toast {
       position: fixed; bottom: 30px; left: 50%;
       transform: translateX(-50%) translateY(100px);
-      background: var(--card); color: var(--text); padding: 12px 24px;
+      background: #1a1a2e; color: var(--text); padding: 12px 24px;
       border-radius: 12px; font-size: 14px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.5);
       transition: transform 0.3s ease; z-index: 200; border: 1px solid #2a2a45;
     }
     .toast.show { transform: translateX(-50%) translateY(0); }
     
+    .modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal.show { display: flex; }
+    
+    .modal-content {
+      background: #1a1a2e;
+      border-radius: 14px;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      border: 1px solid #2a2a45;
+    }
+    
+    .modal-content h2 { font-size: 18px; margin-bottom: 14px; }
+    .modal-content h3 { font-size: 14px; margin: 14px 0 8px; color: var(--muted); }
+    
+    .modal-content table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-bottom: 14px;
+    }
+    .modal-content th, .modal-content td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #2a2a45;
+    }
+    .modal-content th { color: var(--muted); font-weight: 600; }
+    
+    .modal-btn {
+      background: var(--btn); color: #000; border: none;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px;
+      font-weight: 600; cursor: pointer; margin-right: 8px; margin-top: 8px;
+      font-family: inherit;
+    }
+    .modal-btn.gray { background: #2a2a45; color: var(--text); }
+    .modal-btn.red { background: var(--btn-active); color: #fff; }
+    
     @media (max-width: 400px) {
-      .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
-      .section-block { min-height: 85px; padding: 14px 8px; }
-      .section-block .name { font-size: 13px; }
+      .grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 8px; }
+      .section-card { padding: 8px; }
+      .section-card .title { font-size: 14px; }
+      .part-btn { padding: 8px 6px; font-size: 11px; }
     }
   </style>
 </head>
@@ -131,7 +238,11 @@
     <span class="status-dot" id="connDot"></span>
     <h1 id="headerTitle">Загрузка...</h1>
   </div>
-  <span class="role-badge" id="roleBadge">—</span>
+  <div class="header-buttons">
+    <button class="header-btn" onclick="openStats()">📊</button>
+    <button class="header-btn" onclick="openExport()">📄</button>
+    <span class="role-badge" id="roleBadge">—</span>
+  </div>
 </header>
 
 <div class="grid" id="grid">
@@ -141,14 +252,49 @@
 <footer id="footer">Последнее обновление: —</footer>
 <div class="toast" id="toast"></div>
 
+<!-- Модальное окно статистики -->
+<div class="modal" id="statsModal">
+  <div class="modal-content">
+    <h2>📊 Статистика</h2>
+    <div style="margin-bottom:12px;">
+      <button class="modal-btn gray" onclick="loadStats('today')">Сегодня</button>
+      <button class="modal-btn gray" onclick="loadStats('week')">Неделя</button>
+      <button class="modal-btn gray" onclick="loadStats('month')">Месяц</button>
+      <button class="modal-btn gray" onclick="loadStats('all')">Всё время</button>
+    </div>
+    <div id="statsContent">Загрузка...</div>
+    <button class="modal-btn red" onclick="closeStats()" style="margin-top:14px;">Закрыть</button>
+  </div>
+</div>
+
+<!-- Модальное окно экспорта -->
+<div class="modal" id="exportModal">
+  <div class="modal-content">
+    <h2>📄 Экспорт отчёта</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Выберите период и формат:</p>
+    <div style="margin-bottom:12px;">
+      <button class="modal-btn gray" onclick="setExportPeriod('today')" id="period-today">Сегодня</button>
+      <button class="modal-btn gray" onclick="setExportPeriod('week')" id="period-week">Неделя</button>
+      <button class="modal-btn gray" onclick="setExportPeriod('month')" id="period-month">Месяц</button>
+      <button class="modal-btn gray" onclick="setExportPeriod('all')" id="period-all">Всё время</button>
+    </div>
+    <div>
+      <button class="modal-btn" onclick="doExport('pdf')">📕 PDF</button>
+      <button class="modal-btn" onclick="doExport('excel')">📗 Excel (CSV)</button>
+    </div>
+    <div id="exportResult" style="margin-top:14px;font-size:13px;"></div>
+    <button class="modal-btn red" onclick="closeExport()" style="margin-top:14px;">Закрыть</button>
+  </div>
+</div>
+
 <script>
 // ============================================================
-// КОНФИГУРАЦИЯ — ЗАМЕНИТЕ ТОЛЬКО API_URL
+// КОНФИГУРАЦИЯ
 // ============================================================
 var API_URL = "https://script.google.com/macros/s/AKfycbzwFuqz57iWOdqOeyt7OgV5ncxD6Pq_NmZo5z1s0n0cIF-obPYWnxMAqyw4KDSvad7NLw/exec";
 
 var firebaseConfig = {
-  apiKey: "AIzaSyD4Qb5gJnRer7hhbs5hNhRG1-3SCapddZI",
+  apiKey: "AIzaSyDv6ChAH1RaZ9Vs5P0fz2xPXgbHXp5MFk",
   authDomain: "delivery-system-11b58.firebaseapp.com",
   projectId: "delivery-system-11b58",
   storageBucket: "delivery-system-11b58.firebasestorage.app",
@@ -163,8 +309,9 @@ var isInitialLoad = true;
 var pollTimer = null;
 var consecutiveErrors = 0;
 var audioContext = null;
-var currentMelody = 1;
-var fcmToken = null;
+var currentSettings = {};
+var currentSections = [];
+var exportPeriod = "today";
 
 // ============================================================
 // АУДИО
@@ -178,11 +325,25 @@ function initAudio() {
     gain.gain.value = 0.001;
     osc.connect(gain); gain.connect(audioContext.destination);
     osc.start(0); osc.stop(0.01);
-    console.log("Аудио инициализировано");
-  } catch (e) { console.log("Аудио недоступно:", e); }
+  } catch (e) { console.log("Аудио:", e); }
 }
 
-function playMelody(num) {
+var audioPlayer = new Audio();
+
+function playMelody(settings) {
+  settings = settings || currentSettings;
+  
+  // Приоритет: своя мелодия по URL
+  if (settings.melodyUrl && settings.melodyUrl.indexOf("http") === 0) {
+    try {
+      audioPlayer.src = settings.melodyUrl;
+      audioPlayer.volume = 1.0;
+      audioPlayer.play().catch(function(e) { console.log("URL мелодия:", e); });
+      return;
+    } catch (e) { console.log("Ошибка URL мелодии:", e); }
+  }
+  
+  // Встроенные мелодии
   if (!audioContext) return;
   var now = audioContext.currentTime;
   var patterns = {
@@ -192,7 +353,7 @@ function playMelody(num) {
     4: [{f:800,d:0.1},{f:1000,d:0.1},{f:800,d:0.1},{f:1000,d:0.1}],
     5: [{f:880,d:0.3},{f:1760,d:0.3}]
   };
-  var pattern = patterns[num] || patterns[1];
+  var pattern = patterns[settings.melody] || patterns[1];
   var t = now;
   pattern.forEach(function(note) {
     var osc = audioContext.createOscillator();
@@ -211,8 +372,9 @@ function playMelody(num) {
 // API
 // ============================================================
 
-async function apiGet(action) {
-  var res = await fetch(API_URL + "?action=" + action);
+async function apiGet(action, extra) {
+  var url = API_URL + "?action=" + action + (extra ? "&" + extra : "");
+  var res = await fetch(url);
   if (!res.ok) throw new Error("HTTP " + res.status);
   return res.json();
 }
@@ -234,81 +396,46 @@ async function apiPost(payload) {
 async function initFirebase() {
   try {
     var config = await apiGet("clientConfig");
-    if (!config || !config.vapidKey) {
-      console.log("VAPID не настроен");
-      return;
-    }
+    if (!config || !config.vapidKey) return;
     
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     var messaging = firebase.messaging();
     
-    // Регистрируем SW
     var registration = await navigator.serviceWorker.register("firebase-messaging-sw.js");
-    console.log("SW зарегистрирован");
     
-    // ЖДЁМ АКТИВАЦИИ — ключевое исправление
     if (!registration.active) {
-      console.log("Ждём активации SW...");
       await new Promise(function(resolve) {
         var worker = registration.installing || registration.waiting;
-        if (!worker) {
-          // уже активирован
-          resolve();
-          return;
-        }
+        if (!worker) { resolve(); return; }
         worker.addEventListener("statechange", function() {
-          console.log("SW state:", worker.state);
           if (worker.state === "activated") resolve();
         });
-        // Если уже activated на момент подписки
         if (worker.state === "activated") resolve();
       });
-      console.log("SW активирован");
+      await new Promise(function(r) { setTimeout(r, 500); });
     }
-    
-    // Небольшая пауза, чтобы Firebase точно увидел активный SW
-    await new Promise(function(r) { setTimeout(r, 500); });
     
     var permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      console.log("Уведомления не разрешены");
-      return;
-    }
+    if (permission !== "granted") return;
     
     var token = await messaging.getToken({
       vapidKey: config.vapidKey,
       serviceWorkerRegistration: registration
     });
     
-    if (!token) {
-      console.log("Не удалось получить FCM-токен");
-      return;
-    }
+    if (!token) return;
     
-    fcmToken = token;
-    console.log("FCM Token получен");
-    
-    var regResult = await apiPost({
-      action: "registerToken",
-      token: token,
-      role: MODE
-    });
-    console.log("Регистрация токена:", regResult);
+    await apiPost({ action: "registerToken", token: token, role: MODE });
+    console.log("FCM Token зарегистрирован");
     
     messaging.onMessage(function(payload) {
-      console.log("Push в foreground:", payload);
       var melody = payload.data && payload.data.melody ? parseInt(payload.data.melody) : 1;
-      playMelody(melody);
+      playMelody({ melody: melody, melodyUrl: currentSettings.melodyUrl });
       showToast("🔔 " + (payload.data && payload.data.section ? payload.data.section : "Новая доставка!"));
       loadData();
     });
-    
-    
-    console.log("✅ Firebase Push инициализирован");
   } catch (err) {
-    console.error("Firebase init error:", err);
+    console.error("Firebase:", err);
   }
 }
 
@@ -320,43 +447,48 @@ async function loadData() {
   try {
     var data = await apiGet("allData");
     onDataLoaded(data);
-  } catch (err) {
-    onDataError(err);
-  }
+  } catch (err) { onDataError(err); }
 }
 
 function onDataLoaded(data) {
   consecutiveErrors = 0;
   updateConnectionStatus(true);
-  
   if (!data || !data.sections) return;
   
-  if (data.settings && data.settings.pollInterval) {
-    var newInterval = data.settings.pollInterval;
-    if (newInterval !== POLL_INTERVAL) {
-      POLL_INTERVAL = newInterval;
+  if (data.settings) {
+    currentSettings = data.settings;
+    applySettings(data.settings);
+    
+    if (data.settings.pollInterval && data.settings.pollInterval !== POLL_INTERVAL) {
+      POLL_INTERVAL = data.settings.pollInterval;
       restartPolling();
     }
   }
   
-  if (data.settings) {
-    if (data.settings.systemName) document.getElementById("headerTitle").textContent = data.settings.systemName;
-    if (data.settings.melody) currentMelody = data.settings.melody;
-  }
-  
+  currentSections = data.sections;
   renderSections(data.sections, data.settings);
   
   var now = new Date();
-  document.getElementById("footer").textContent = 
+  document.getElementById("footer").textContent =
     "Обновлено: " + String(now.getHours()).padStart(2,"0") + ":" +
     String(now.getMinutes()).padStart(2,"0") + ":" +
     String(now.getSeconds()).padStart(2,"0");
 }
 
+function applySettings(s) {
+  if (s.systemName) document.getElementById("headerTitle").textContent = s.systemName;
+  if (s.cardColor) document.documentElement.style.setProperty("--card-bg", s.cardColor);
+  if (s.btnColor) document.documentElement.style.setProperty("--btn", s.btnColor);
+  if (s.btnActiveColor) document.documentElement.style.setProperty("--btn-active", s.btnActiveColor);
+  if (s.fontFamily) document.documentElement.style.setProperty("--font", s.fontFamily);
+  if (s.fontTitleSize) document.documentElement.style.setProperty("--font-title", s.fontTitleSize + "px");
+  if (s.fontBtnSize) document.documentElement.style.setProperty("--font-btn", s.fontBtnSize + "px");
+  if (s.textColor) document.documentElement.style.setProperty("--text", s.textColor);
+}
+
 function onDataError(error) {
   consecutiveErrors++;
   updateConnectionStatus(false);
-  console.error("Ошибка:", error);
   if (consecutiveErrors > 5) showToast("Нет связи с сервером");
 }
 
@@ -365,7 +497,7 @@ function updateConnectionStatus(connected) {
 }
 
 // ============================================================
-// ОТРИСОВКА
+// ОТРИСОВКА КАРТОЧЕК С КНОПКАМИ
 // ============================================================
 
 function renderSections(sections, settings) {
@@ -377,30 +509,42 @@ function renderSections(sections, settings) {
     return;
   }
   
-  var html = "";
   var hasNewAlert = false;
+  var html = "";
   
   sections.forEach(function(sec) {
-    var isRed = sec.status === true;
-    var wasRed = previousStates[sec.id] === true;
+    var parts = sec.parts || [];
+    var cardClass = parts.length === 0 ? "section-card empty" : "section-card";
     
-    if (MODE === "driver" && isRed && !wasRed && !isInitialLoad) hasNewAlert = true;
-    previousStates[sec.id] = isRed;
+    html += '<div class="' + cardClass + '" data-section="' + escapeHtml(sec.name) + '">';
+    html += '<div class="title">' + escapeHtml(sec.name) + '</div>';
+    html += '<div class="parts">';
     
-    var hint = MODE === "station"
-      ? (isRed ? "Нажмите если доставлено" : "Нажмите если нужна доставка")
-      : (isRed ? "Нажмите для подтверждения" : "");
+    if (parts.length === 0) {
+      // Пустая карточка — только заголовок
+    } else {
+      parts.forEach(function(part) {
+        var isRed = part.status === true;
+        var key = sec.name + "|" + part.number;
+        var wasRed = previousStates[key] === true;
+        
+        if (MODE === "driver" && isRed && !wasRed && !isInitialLoad) hasNewAlert = true;
+        previousStates[key] = isRed;
+        
+        html += '<button class="part-btn' + (isRed ? ' red' : '') + '" ' +
+                'onclick="onPartClick(\'' + escapeAttr(sec.name) + '\', \'' + escapeAttr(part.number) + '\', ' + isRed + ')" ' +
+                'data-key="' + escapeAttr(key) + '">' +
+                escapeHtml(part.number) + '</button>';
+      });
+    }
     
-    html += '<div class="section-block' + (isRed ? ' red' : '') + '" ' +
-            'onclick="onBlockClick(\'' + sec.id + '\', ' + isRed + ')" data-id="' + sec.id + '">' +
-            '<div class="name">' + escapeHtml(sec.name) + '</div>' +
-            (hint ? '<div class="hint">' + hint + '</div>' : '') + '</div>';
+    html += '</div></div>';
   });
   
   grid.innerHTML = html;
   
   if (hasNewAlert && settings && settings.soundEnabled !== false) {
-    playMelody(currentMelody);
+    playMelody(settings);
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
     showToast("🔔 Новый запрос на доставку!");
   }
@@ -412,22 +556,28 @@ function escapeHtml(str) {
   return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
+function escapeAttr(str) {
+  return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/\\/g, "\\\\");
+}
+
 // ============================================================
-// КЛИК
+// КЛИК ПО КНОПКЕ ПАРТ-НОМЕРА
 // ============================================================
 
-async function onBlockClick(sectionId, isRed) {
+async function onPartClick(sectionName, partNumber, isRed) {
   if (MODE === "station" && isRed) { showToast("Уже ожидает доставку"); return; }
   if (MODE === "driver" && !isRed) return;
   
   var newStatus = (MODE === "station") ? true : false;
-  var block = document.querySelector('[data-id="' + sectionId + '"]');
-  if (block) { block.style.opacity = "0.6"; block.style.pointerEvents = "none"; }
+  var key = sectionName + "|" + partNumber;
+  var btn = document.querySelector('[data-key="' + key + '"]');
+  if (btn) { btn.style.opacity = "0.5"; btn.style.pointerEvents = "none"; }
   
   try {
     var result = await apiPost({
       action: "updateStatus",
-      sectionId: sectionId,
+      sectionId: sectionName,
+      partNumber: partNumber,
       newStatus: newStatus,
       userRole: MODE
     });
@@ -437,11 +587,11 @@ async function onBlockClick(sectionId, isRed) {
       loadData();
     } else {
       showToast("Ошибка: " + (result.error || "неизвестная"));
-      if (block) { block.style.opacity = "1"; block.style.pointerEvents = "auto"; }
+      if (btn) { btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
     }
   } catch (err) {
     showToast("Ошибка соединения");
-    if (block) { block.style.opacity = "1"; block.style.pointerEvents = "auto"; }
+    if (btn) { btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
   }
 }
 
@@ -463,6 +613,84 @@ function showToast(message) {
   toast.classList.add("show");
   if (toast._timer) clearTimeout(toast._timer);
   toast._timer = setTimeout(function() { toast.classList.remove("show"); }, 2500);
+}
+
+// ============================================================
+// СТАТИСТИКА
+// ============================================================
+
+function openStats() {
+  document.getElementById("statsModal").classList.add("show");
+  loadStats("today");
+}
+
+function closeStats() {
+  document.getElementById("statsModal").classList.remove("show");
+}
+
+async function loadStats(period) {
+  var content = document.getElementById("statsContent");
+  content.innerHTML = "Загрузка...";
+  
+  try {
+    var data = await apiGet("stats", "period=" + period);
+    if (!data.stats || data.stats.length === 0) {
+      content.innerHTML = '<p style="color:var(--muted);">Нет данных за этот период</p>';
+      return;
+    }
+    
+    var html = '<h3>Доставки (' + data.stats.length + ' записей)</h3><table>';
+    html += '<tr><th>Участок</th><th>Парт-номер</th><th>Кол-во</th></tr>';
+    data.stats.forEach(function(s) {
+      html += '<tr><td>' + escapeHtml(s.section) + '</td><td>' + escapeHtml(s.part) + '</td><td>' + s.count + '</td></tr>';
+    });
+    html += '</table>';
+    content.innerHTML = html;
+  } catch (err) {
+    content.innerHTML = '<p style="color:var(--btn-active);">Ошибка загрузки</p>';
+  }
+}
+
+// ============================================================
+// ЭКСПОРТ
+// ============================================================
+
+function openExport() {
+  document.getElementById("exportModal").classList.add("show");
+  setExportPeriod("today");
+}
+
+function closeExport() {
+  document.getElementById("exportModal").classList.remove("show");
+  document.getElementById("exportResult").innerHTML = "";
+}
+
+function setExportPeriod(period) {
+  exportPeriod = period;
+  ["today","week","month","all"].forEach(function(p) {
+    document.getElementById("period-" + p).classList.toggle("gray", p !== period);
+  });
+}
+
+async function doExport(format) {
+  var result = document.getElementById("exportResult");
+  result.innerHTML = "Генерация файла...";
+  
+  try {
+    var data = await apiPost({
+      action: "exportReport",
+      format: format,
+      period: exportPeriod
+    });
+    
+    if (data.success && data.url) {
+      result.innerHTML = '✅ <a href="' + data.url + '" target="_blank" style="color:var(--btn);">Скачать ' + data.name + '</a>';
+    } else {
+      result.innerHTML = '<span style="color:var(--btn-active);">Ошибка: ' + (data.error || "неизвестная") + '</span>';
+    }
+  } catch (err) {
+    result.innerHTML = '<span style="color:var(--btn-active);">Ошибка соединения</span>';
+  }
 }
 
 // ============================================================
