@@ -149,12 +149,12 @@
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     
     .section-card.empty .parts::after {
-      content: "Нет парт-номеров";
-      font-size: 11px;
-      color: var(--muted);
-      text-align: center;
-      padding: 6px;
-    }
+  content: "Нет парт-номеров";
+  font-size: 11px;
+  color: var(--empty-text);
+  text-align: center;
+  padding: 6px;
+}
     
     footer {
       padding: 8px 16px; text-align: center; font-size: 11px;
@@ -502,7 +502,11 @@ function applySettings(s) {
   if (s.fontFamily) document.documentElement.style.setProperty("--font", s.fontFamily);
   if (s.fontTitleSize) document.documentElement.style.setProperty("--font-title", s.fontTitleSize + "px");
   if (s.fontBtnSize) document.documentElement.style.setProperty("--font-btn", s.fontBtnSize + "px");
-  if (s.textColor) document.documentElement.style.setProperty("--text", s.textColor);
+  
+  // Цвет заголовка участка (и всех остальных текстов, кроме кнопок)
+  if (s.titleColor) document.documentElement.style.setProperty("--text", s.titleColor);
+  // Отдельный цвет для "Нет парт-номеров"
+  if (s.emptyTextColor) document.documentElement.style.setProperty("--empty-text", s.emptyTextColor);
 }
 
 function onDataError(error) {
